@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firstsite Creativity Test</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f9f9f9; margin: 0; padding: 0; }
+    .container { padding: 20px; }
+    canvas { border: 1px solid #ccc; background: white; cursor: crosshair; }
+    #prompt { font-size: 18px; margin-bottom: 10px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Firstsite Figural Creativity Test</h2>
+    <div id="prompt"></div>
+    <canvas id="drawingCanvas" width="600" height="400"></canvas>
+    <div>
+      <button onclick="clearCanvas()">Clear</button>
+      <button onclick="nextPrompt()">Next</button>
+    </div>
+    <div id="result" style="margin-top: 20px; font-size: 18px;"></div>
+  </div>
+
+  <script>
+    const prompts = [
+      "Use this simple line to create as many different drawings as possible.",
+      "Turn this rectangle into something different in each corner — each with a new theme.",
+      "Here's a square. Add as much story and detail as you can.",
+      "This circle is common — but your idea shouldn’t be. Make it unique.",
+      "This broken shape is a problem. Turn it into something positive showing hope or care."
+    ];
+
+    let currentPrompt = 0;
+    const canvas = document.getElementById("drawingCanvas");
+    const ctx = canvas.getContext("2d");
+    const promptDiv = document.getElementById("prompt");
+    const resultDiv = document.getElementById("result");
+    const drawings = [];
+
+    let drawing = false;
+
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mousemove", draw);
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBaseShape(currentPrompt);
+    }
+
+    function drawBaseShape(index) {
+      ctx.strokeStyle = "lightgray";
+      ctx.lineWidth = 2;
+      if (index === 0) ctx.strokeRect(100, 200, 400, 0); // line
+      if (index === 1) ctx.strokeRect(150, 100, 300, 200); // rectangle
+      if (index === 2) ctx.strokeRect(250, 150, 100, 100); // square
+      if (index === 3) { ctx.beginPath(); ctx.arc(300, 200, 100, 0, Math.PI * 2); ctx.stroke(); } // circle
+      if (index === 4) { ctx.beginPath(); ctx.arc(300, 200, 100, 0, Math.PI); ctx.stroke(); } // broken shape
+    }
+
+    function nextPrompt() {
+      const img = canvas.toDataURL("image/png");
+      drawings.push(img);
+      currentPrompt++;
+
+      if (currentPrompt < prompts.length) {
+        promptDiv.innerText = prompts[currentPrompt];
+        clearCanvas();
+      } else {
+        submitDrawings();
+      }
+    }
+
+    async function submitDrawings() {
+      promptDiv.innerText = "Scoring your creativity...";
+      const res = await fetch("http://localhost:5000/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drawings })
+      });
+      const data = await res.json();
+      resultDiv.innerHTML = `
+        <strong>Your Creativity Scores:</strong><br>
+        Fluency: ${data.fluency}/10<br>
+        Flexibility: ${data.flexibility}/10<br>
+        Elaboration: ${data.elaboration}/10<br>
+        Originality: ${data.originality}/10<br>
+        Values-alignment: ${data.values}/10
+      `;
+    }
+
+    promptDiv.innerText = prompts[currentPrompt];
+    drawBaseShape(currentPrompt);
+  </script>
+</body>
+</html>
