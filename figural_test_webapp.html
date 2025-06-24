@@ -2,107 +2,326 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Firstsite Creativity Test</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f9f9f9; margin: 0; padding: 0; }
-    .container { padding: 20px; }
-    canvas { border: 1px solid #ccc; background: white; cursor: crosshair; }
-    #prompt { font-size: 18px; margin-bottom: 10px; }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fdf6f0;
+      color: #333;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #5c5470;
+    }
+    .question-container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff8f0;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    ul {
+      list-style-type: disc;
+      padding-left: 20px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: crosshair;
+      display: block;
+      margin: 10px auto;
+    }
+    .nav-buttons {
+      margin-top: 20px;
+      text-align: center;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background-color: #b0d6d4;
+      color: #333;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a0c9c6;
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .image-grid img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      max-height: 150px;
+      object-fit: contain;
+    }
+    .toolbar {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    p.note {
+      font-style: italic;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Firstsite Figural Creativity Test</h2>
-    <div id="prompt"></div>
-    <canvas id="drawingCanvas" width="600" height="400"></canvas>
-    <div>
-      <button onclick="clearCanvas()">Clear</button>
-      <button onclick="nextPrompt()">Next</button>
-    </div>
-    <div id="result" style="margin-top: 20px; font-size: 18px;"></div>
+  <h1>Firstsite Creativity Test</h1>
+  <div class="question-container" id="questionContainer"></div>
+
+  <div class="nav-buttons">
+    <button onclick="prevQuestion()">Back</button>
+    <button onclick="nextQuestion()">Next</button>
+    <button onclick="submitAnswers()">Submit</button>
   </div>
 
+  <div id="results"></div>
+
   <script>
-    const prompts = [
-      "Use this simple line to create as many different drawings as possible.",
-      "Turn this rectangle into something different in each corner — each with a new theme.",
-      "Here's a square. Add as much story and detail as you can.",
-      "This circle is common — but your idea shouldn’t be. Make it unique.",
-      "This broken shape is a problem. Turn it into something positive showing hope or care."
+    const questions = [
+      {
+        id: 1,
+        prompt: 'List different uses of a brick. One per line.',
+        type: 'text'
+      },
+      {
+        id: 2,
+        prompt: 'Draw something using a straight line. Show your flexibility.',
+        type: 'drawing',
+        baseShape: 'line'
+      },
+      {
+        id: 3,
+        prompt: 'Draw something unique and original using this shape.',
+        type: 'drawing',
+        baseShape: 'circle'
+      },
+      {
+        id: 4,
+        prompt: 'What do you think when you look at this image? One thought per line.',
+        type: 'text',
+        imageGrid: true
+      }
     ];
 
-    let currentPrompt = 0;
-    const canvas = document.getElementById("drawingCanvas");
-    const ctx = canvas.getContext("2d");
-    const promptDiv = document.getElementById("prompt");
-    const resultDiv = document.getElementById("result");
-    const drawings = [];
+    let currentQuestionIndex = 0;
+    const answers = {};
 
-    let drawing = false;
+    function renderQuestion() {
+      const container = document.getElementById('questionContainer');
+      container.innerHTML = '';
+      const question = questions[currentQuestionIndex];
 
-    canvas.addEventListener("mousedown", () => drawing = true);
-    canvas.addEventListener("mouseup", () => drawing = false);
-    canvas.addEventListener("mousemove", draw);
+      const prompt = document.createElement('h2');
+      prompt.innerText = question.prompt;
+      container.appendChild(prompt);
 
-    function draw(e) {
-      if (!drawing) return;
-      const rect = canvas.getBoundingClientRect();
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.arc(e.clientX - rect.left, e.clientY - rect.top, 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
+      if (question.imageGrid) {
+        const grid = document.createElement('div');
+        grid.className = 'image-grid';
+        const images = ['creative.png', 'inclusive.png', 'responsible.png', 'agile.png'];
+        images.forEach(name => {
+          const img = document.createElement('img');
+          img.src = name;
+          img.alt = name.split('.')[0];
+          grid.appendChild(img);
+        });
+        container.appendChild(grid);
+      }
 
-    function clearCanvas() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBaseShape(currentPrompt);
-    }
+      if (question.type === 'text') {
+        const note = document.createElement('p');
+        note.className = 'note';
+        note.innerText = 'Type one idea and press Enter to add it to the list.';
+        container.appendChild(note);
 
-    function drawBaseShape(index) {
-      ctx.strokeStyle = "lightgray";
-      ctx.lineWidth = 2;
-      if (index === 0) ctx.strokeRect(100, 200, 400, 0); // line
-      if (index === 1) ctx.strokeRect(150, 100, 300, 200); // rectangle
-      if (index === 2) ctx.strokeRect(250, 150, 100, 100); // square
-      if (index === 3) { ctx.beginPath(); ctx.arc(300, 200, 100, 0, Math.PI * 2); ctx.stroke(); } // circle
-      if (index === 4) { ctx.beginPath(); ctx.arc(300, 200, 100, 0, Math.PI); ctx.stroke(); } // broken shape
-    }
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Type idea and press Enter...';
+        container.appendChild(input);
 
-    function nextPrompt() {
-      const img = canvas.toDataURL("image/png");
-      drawings.push(img);
-      currentPrompt++;
+        const list = document.createElement('ul');
+        container.appendChild(list);
 
-      if (currentPrompt < prompts.length) {
-        promptDiv.innerText = prompts[currentPrompt];
-        clearCanvas();
-      } else {
-        submitDrawings();
+        // Initialize answer storage for this question
+        if (!answers[currentQuestionIndex]) {
+          answers[currentQuestionIndex] = { type: 'text', values: [] };
+        }
+        // Load previously saved items
+        answers[currentQuestionIndex].values.forEach(item => {
+          const li = document.createElement('li');
+          li.innerText = item;
+          list.appendChild(li);
+        });
+
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && input.value.trim() !== '') {
+            e.preventDefault();
+            const val = input.value.trim();
+            answers[currentQuestionIndex].values.push(val);
+            const li = document.createElement('li');
+            li.innerText = val;
+            list.appendChild(li);
+            input.value = '';
+          }
+        });
+      }
+
+      if (question.type === 'drawing') {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'toolbar';
+
+        const clearBtn = document.createElement('button');
+        clearBtn.innerText = 'Clear';
+        clearBtn.onclick = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          drawBaseShape(ctx, question.baseShape);
+          answers[currentQuestionIndex].strokes = [];
+        };
+
+        const eraserBtn = document.createElement('button');
+        eraserBtn.innerText = 'Eraser OFF';
+        let erasing = false;
+        eraserBtn.onclick = () => {
+          erasing = !erasing;
+          if (erasing) {
+            eraserBtn.innerText = 'Eraser ON';
+            canvas.style.cursor = 'crosshair';
+          } else {
+            eraserBtn.innerText = 'Eraser OFF';
+            canvas.style.cursor = 'crosshair';
+          }
+        };
+
+        toolbar.appendChild(clearBtn);
+        toolbar.appendChild(eraserBtn);
+        container.appendChild(toolbar);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 400;
+        container.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        if (!answers[currentQuestionIndex]) {
+          answers[currentQuestionIndex] = { type: 'drawing', strokes: [] };
+        }
+
+        drawBaseShape(ctx, question.baseShape);
+
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mouseleave', () => drawing = false);
+
+        canvas.addEventListener('mousemove', e => {
+          if (!drawing) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          if (erasing) {
+            ctx.clearRect(x - 10, y - 10, 20, 20);
+          } else {
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            answers[currentQuestionIndex].strokes.push({ x, y });
+          }
+        });
       }
     }
 
-    async function submitDrawings() {
-      promptDiv.innerText = "Scoring your creativity...";
-      const res = await fetch("http://localhost:5000/score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ drawings })
-      });
-      const data = await res.json();
-      resultDiv.innerHTML = `
-        <strong>Your Creativity Scores:</strong><br>
-        Fluency: ${data.fluency}/10<br>
-        Flexibility: ${data.flexibility}/10<br>
-        Elaboration: ${data.elaboration}/10<br>
-        Originality: ${data.originality}/10<br>
-        Values-alignment: ${data.values}/10
+    function drawBaseShape(ctx, shape) {
+      ctx.strokeStyle = '#aaa';
+      ctx.lineWidth = 2;
+      if (shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(300, 200, 50, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (shape === 'line') {
+        ctx.beginPath();
+        ctx.moveTo(100, 200);
+        ctx.lineTo(500, 200);
+        ctx.stroke();
+      }
+    }
+
+    function nextQuestion() {
+      if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      }
+    }
+
+    function submitAnswers() {
+      const score = mockScore(answers);
+
+      // Build list html for Q1
+      let listAnswer = '';
+      if (answers[0]?.values) {
+        listAnswer = answers[0].values
+          .filter(l => l.trim() !== '')
+          .map(line => `<li>${line}</li>`)
+          .join('');
+      }
+
+      // Build list html for Q4
+      let reflectionAnswer = '';
+      if (answers[3]?.values) {
+        reflectionAnswer = answers[3].values
+          .filter(l => l.trim() !== '')
+          .map(line => `<li>${line}</li>`)
+          .join('');
+      }
+
+      document.getElementById('results').innerHTML = `
+        <h2>Results</h2>
+        <p><strong>Creativity Score (simulated):</strong> ${score}/100</p>
+        <h3>Q1: Uses of a Brick</h3><ul>${listAnswer || '<li>No answer.</li>'}</ul>
+        <h3>Q4: Thoughts on Image</h3><ul>${reflectionAnswer || '<li>No answer.</li>'}</ul>
       `;
     }
 
-    promptDiv.innerText = prompts[currentPrompt];
-    drawBaseShape(currentPrompt);
+    function mockScore(ans) {
+      let total = 0;
+      if (ans[0]?.values) total += ans[0].values.length * 2;
+      if (ans[3]?.values) total += ans[3].values.length * 3;
+      if (ans[1]?.strokes) total += ans[1].strokes.length > 10 ? 10 : 5;
+      if (ans[2]?.strokes) total += ans[2].strokes.length > 10 ? 10 : 5;
+      return Math.min(100, total + 20);
+    }
+
+    renderQuestion();
   </script>
 </body>
 </html>
