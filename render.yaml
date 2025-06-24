@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: firstsite-backend
+    env: python
+    buildCommand: ""
+    startCommand: python mock_scoring_backend.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
